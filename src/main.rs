@@ -4,9 +4,10 @@ use std::io;
 fn main() {
     let secret = rand::thread_rng().gen_range(1, 101);
 
-    println!("Hello, world! Secrit is {}", secret);
+    println!("Hello, world!");
     println!("This is a guessing game!");
     loop {
+        println!("Please enter a number");
         let mut guess = String::new();
 
         io::stdin()
