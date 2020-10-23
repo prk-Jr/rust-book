@@ -33,8 +33,8 @@ fn main() {
         })
     }
 
-    for item in rows.iter() {
-        println!("item: {:?}", item);
+    for (i, item) in rows.iter().enumerate() {
+        println!("i:{} item: {:?}", i, item);
     }
 
     hash_map();
