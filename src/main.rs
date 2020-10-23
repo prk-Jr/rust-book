@@ -1,5 +1,7 @@
 mod db_row;
 use db_row::DBTable;
+mod hashmap;
+use hashmap::hash_map;
 
 fn main() {
     println!("{}, Bharat", String::from("नमस्ते"));
@@ -34,4 +36,6 @@ fn main() {
     for item in rows.iter() {
         println!("item: {:?}", item);
     }
+
+    hash_map();
 }
