@@ -1,13 +1,15 @@
 use std::sync::mpsc;
 use std::{thread, time};
+mod my_threads;
 
 fn main() {
     let t1 = time::SystemTime::now();
+    my_threads::create_my_threads_with_same_rx();
     let (tx, rx) = mpsc::channel();
     let (ntx, nrx) = mpsc::channel();
 
     thread::spawn(move || {
-        thread::sleep(time::Duration::from_millis(3000));
+        thread::sleep(time::Duration::from_millis(1000));
         let val = String::from("hi");
         tx.send(val).unwrap();
     });
