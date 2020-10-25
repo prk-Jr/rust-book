@@ -2,9 +2,11 @@ use std::sync::mpsc;
 use std::{thread, time};
 mod my_threads;
 mod shared_memory;
+mod shared_memory_using_arc;
 
 fn main() {
     let t1 = time::SystemTime::now();
+    shared_memory_using_arc::arc_impl();
     my_threads::create_my_threads_with_same_rx();
     shared_memory::use_mutex();
     let (tx, rx) = mpsc::channel();
