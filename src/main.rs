@@ -1,10 +1,12 @@
 use std::sync::mpsc;
 use std::{thread, time};
 mod my_threads;
+mod shared_memory;
 
 fn main() {
     let t1 = time::SystemTime::now();
     my_threads::create_my_threads_with_same_rx();
+    shared_memory::use_mutex();
     let (tx, rx) = mpsc::channel();
     let (ntx, nrx) = mpsc::channel();
 
