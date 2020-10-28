@@ -1,23 +1,24 @@
+use rust_project::ThreadPool;
 use std::io::prelude::*;
-use std::net::{TcpListener, TcpStream};
-use std::thread;
-use std::time::*;
+use std::net::TcpListener;
+use std::net::TcpStream;
 fn main() {
     println!("Hello, world!");
     let mut count = 0;
-    let server = TcpListener::bind("127.0.0.1:4080").unwrap();
-    for stream in server.incoming() {
+    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let pool = ThreadPool::new(10);
+
+    for stream in listener.incoming() {
         count += 1;
-        println!("hello {}", count);
-        match stream {
-            Ok(mut data) => {
-                {
-                    thread::spawn(move || handle_stream(&mut data));
-                };
-            }
-            Err(data) => eprint!("Some error occured {:?} at {:?}", data, SystemTime::now()),
-        }
+        println!("Total requests {}", count);
+        let mut stream = stream.unwrap();
+
+        pool.execute(move || {
+            handle_stream(&mut stream);
+        });
     }
+
+    println!("Shutting down.");
 }
 
 fn handle_stream(stream: &mut TcpStream) {
@@ -26,7 +27,7 @@ fn handle_stream(stream: &mut TcpStream) {
     stream.read(&mut buffer).unwrap();
     let response = "HTTP/1.1 200 OK\r\n\r\n";
     let mut res: Vec<String> = Vec::new();
-    for i in 0..10000 {
+    for i in 0..1000000 {
         let var = format!("{}:{}", i, "Hello World");
         res.push(var);
     }
