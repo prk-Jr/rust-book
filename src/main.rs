@@ -2,14 +2,14 @@
 
 use rust_project::ThreadPool;
 mod config;
-use config::{Config, Method, Route};
+use config::{Method, Route, Server};
 use std::io::prelude::*;
-use std::net::TcpListener;
 use std::net::TcpStream;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
 fn main() {
     println!("Hello, world!");
-    let mut count = 0;
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let _count = 0;
+    /*  let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
     let pool = ThreadPool::new(10);
 
     for stream in listener.incoming() {
@@ -26,7 +26,18 @@ fn main() {
         pool.execute(move || {
             route.execute_callback(&mut stream);
         });
-    }
+    } */
+
+    let addr: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 7878);
+    let routes: Vec<Route> = vec![Route::new(
+        Method::GET,
+        String::from("/hello"),
+        Box::new(handle_stream),
+        None,
+    )];
+    let server = Server::new(addr, routes, 10);
+
+    server.run();
 
     println!("Shutting down.");
 }
