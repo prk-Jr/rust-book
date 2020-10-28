@@ -1,4 +1,8 @@
+#![allow(unused_imports)]
+
 use rust_project::ThreadPool;
+mod config;
+use config::{Config, Method, Route};
 use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
@@ -10,11 +14,17 @@ fn main() {
 
     for stream in listener.incoming() {
         count += 1;
+        let route = Route::new(
+            Method::GET,
+            String::from("/hello"),
+            Box::new(handle_stream),
+            None,
+        );
         println!("Total requests {}", count);
         let mut stream = stream.unwrap();
 
         pool.execute(move || {
-            handle_stream(&mut stream);
+            route.execute_callback(&mut stream);
         });
     }
 
@@ -26,6 +36,7 @@ fn handle_stream(stream: &mut TcpStream) {
 
     stream.read(&mut buffer).unwrap();
     let response = "HTTP/1.1 200 OK\r\n\r\n";
+
     let mut res: Vec<String> = Vec::new();
     for i in 0..1000000 {
         let var = format!("{}:{}", i, "Hello World");
