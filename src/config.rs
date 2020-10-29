@@ -13,6 +13,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
 
+type Callback = fn(&mut TcpStream);
+
 pub struct Server {
     address: SocketAddr,
     routes: Vec<Route>,
@@ -90,8 +92,8 @@ type Job = Box<dyn Fn(&mut TcpStream) + Send + Sync + 'static>;
 pub struct Route {
     pub method: Method,
     pub endpoint: String,
-    pub callback: Job,
-    pub middleware: Option<Job>,
+    pub callback: Callback,
+    pub middleware: Option<Callback>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -103,7 +105,12 @@ pub enum Method {
 }
 
 impl Route {
-    pub fn new(method: Method, endpoint: String, callback: Job, middleware: Option<Job>) -> Self {
+    pub fn new(
+        method: Method,
+        endpoint: String,
+        callback: Callback,
+        middleware: Option<Callback>,
+    ) -> Self {
         Self {
             method,
             endpoint,
