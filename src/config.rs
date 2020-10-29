@@ -32,7 +32,7 @@ impl Server {
 
     pub fn run(&self) {
         let listener = TcpListener::bind(&self.address).unwrap();
-        let pool = ThreadPool::new(self.workers);
+        let _pool = ThreadPool::new(self.workers);
 
         for stream in listener.incoming() {
             let mut stream = stream.unwrap();
