@@ -14,10 +14,16 @@ fn main() {
 
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
-        let route = Route::new(Method::GET, String::from("/hello"), handle_stream, None);
+        let routes: Vec<Route> = vec![Route::new(
+            Method::GET,
+            String::from("/hello"),
+            handle_stream,
+            None,
+        )];
+        /* let route = Route::new(Method::GET, String::from("/hello"), handle_stream, None); */
 
         pool.execute(move || {
-            route.execute_callback(&mut stream);
+            routes[0].execute_callback(&mut stream);
         });
     }
 
