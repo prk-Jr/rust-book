@@ -96,7 +96,7 @@ pub struct Route {
     pub middleware: Option<Callback>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 pub enum Method {
     GET,
     POST,
