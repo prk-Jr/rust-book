@@ -1,10 +1,13 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
+use rust_project::response::*;
+use rust_project::route::*;
+use rust_project::threadpool::*;
+use rust_project::{request::*, route};
 use std::collections::HashSet;
 use std::net::{SocketAddr, TcpListener, TcpStream};
 
-use rust_project::ThreadPool;
 use std::io::prelude::*;
 use std::ops::FnOnce;
 
@@ -16,13 +19,13 @@ use std::thread;
 type Callback = fn(&mut TcpStream);
 
 pub struct Server {
-    address: SocketAddr,
+    address: String,
     routes: Vec<Route>,
     workers: usize,
 }
 
 impl Server {
-    pub fn new(address: SocketAddr, routes: Vec<Route>, workers: usize) -> Self {
+    pub fn new(address: String, routes: Vec<Route>, workers: usize) -> Self {
         Self {
             address,
             routes,
@@ -30,66 +33,64 @@ impl Server {
         }
     }
 
-    pub fn run(&self) {
+    pub fn run(&mut self) {
         let listener = TcpListener::bind(&self.address).unwrap();
-        let _pool = ThreadPool::new(self.workers);
 
+        println!(
+            "Server Running at: {}",
+            match self.address.contains("http") {
+                false => format!("http://{}", self.address),
+                _ => format!("{}", self.address),
+            }
+        );
+
+        let pool = ThreadPool::new(self.workers);
         for stream in listener.incoming() {
             let mut stream = stream.unwrap();
             let mut buffer = [0; 1024];
 
             stream.read(&mut buffer).unwrap();
-            let mut req = String::from_utf8_lossy(&mut buffer).to_string();
-            let request = parse_request(&mut req).expect("could not parse the request");
+            let req = String::from_utf8_lossy(&mut buffer).to_string();
 
-            match request.method.to_lowercase().as_str() {
-                "get" => {
-                    println!("Get Method: {}", request.path);
+            stream
+                .write(&self.handle_request(&req).send())
+                .expect("Error occured while repondinf to stream");
+            stream
+                .flush()
+                .expect("Error occured while reponding to stream");
+        }
+    }
 
-                    /*  let data = self
-                    .routes
-                    .into_iter()
-                    .position(|x| x.method == Method::GET); */
-                }
-                "post" => println!("Post Method: {}", request.path),
-                "put" => println!("Put method: {}", request.path),
-                "delete" => println!("Delete method: {}", request.path),
-                _ => println!("Method not implemented"),
+    fn handle_request(&mut self, rqstr: &str) -> Response {
+        let mut req = Request::from_str(&rqstr).unwrap();
+
+        let mut found = false;
+        let mut res = Response::new();
+        for i in 0..self.routes.len() {
+            if self.routes[i].is_match(&req) {
+                let handler = self.routes[i].handler;
+                req.params = self.routes[i].parse(&req.path);
+                res = handler(&req);
+
+                found = true;
+                break;
             }
-
-            self.routes[0].execute_callback(&mut stream)
-            // pool.execute::<_>(move || {});
         }
 
-        println!("Shutting down.");
+        if found {
+            res.set_status(200);
+            res
+        } else {
+            res.set_status(404);
+
+            res
+        }
     }
-}
-
-struct Request {
-    method: String,
-    path: String,
-}
-
-fn parse_request(request: &mut String) -> Result<Request, ()> {
-    let mut parts = request.split(" ");
-    let method = match parts.next() {
-        Some(method) => method.trim().to_string(),
-        None => return Err(()),
-    };
-    let path = match parts.next() {
-        Some(path) => path.trim().to_string(),
-        None => return Err(()),
-    };
-
-    Ok(Request {
-        method: method,
-        path: path,
-    })
 }
 
 type Job = Box<dyn Fn(&mut TcpStream) + Send + Sync + 'static>;
 
-pub struct Route {
+/* pub struct Route {
     pub method: Method,
     pub endpoint: String,
     pub callback: Callback,
@@ -123,3 +124,4 @@ impl Route {
         (self.callback)(stream)
     }
 }
+ */
