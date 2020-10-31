@@ -5,14 +5,13 @@ mod config;
 mod request;
 mod response;
 
-mod threadpool;
 mod utils;
 use config::*;
 use route::*;
 use rust_project::request::*;
 use rust_project::response::*;
 use rust_project::route;
-use threadpool::*;
+use rust_project::threadpool::*;
 
 use std::io::prelude::*;
 use std::net::TcpStream;
@@ -20,10 +19,11 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
 fn main() {
     let _count = 0;
     let routes = vec![Route::new(Method::Get, "/hello", my_res)];
+    let pool = ThreadPool::new(50);
 
     let mut server = Server::new(String::from("127.0.0.1:7878"), routes, 10);
 
-    server.run();
+    pool.execute(move || server.run());
 
     println!("Shutting down.");
 }

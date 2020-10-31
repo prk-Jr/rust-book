@@ -44,9 +44,11 @@ impl Server {
             }
         );
 
-        let pool = ThreadPool::new(self.workers);
+        let _pool = ThreadPool::new(self.workers);
+
         for stream in listener.incoming() {
             let mut stream = stream.unwrap();
+
             let mut buffer = [0; 1024];
 
             stream.read(&mut buffer).unwrap();
