@@ -1,9 +1,10 @@
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use serde_json;
 use std;
 use std::collections::HashMap;
 
-#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Method {
     Get,
     Put,
@@ -79,7 +80,7 @@ impl FromUri for f32 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Request {
     pub method: Method,
     pub path: String,
@@ -108,7 +109,7 @@ impl Request {
         }
     }
 
-    pub fn get<T: FromUri>(&mut self, name: &str) -> T {
+    pub fn get<T: FromUri>(&self, name: &str) -> T {
         if self.params.contains_key(name) == false {
             panic!("Key: {} is absent", name);
         }
@@ -117,7 +118,7 @@ impl Request {
     }
 
     pub fn get_json(&self) -> Result<serde_json::Value, RequestError> {
-        let payload = String::from_utf8(self.payload.clone())?;
+        let payload = String::from_utf8_lossy(&self.payload);
         let data = serde_json::from_str(&payload)?;
 
         Ok(data)
@@ -144,6 +145,7 @@ impl Request {
             "DELETE" => Method::Delete,
             _ => Method::NoImpl,
         };
+
         self.path = String::from(ask[1]);
 
         loop {
@@ -167,6 +169,7 @@ impl Request {
             }
         }
     }
+
     pub fn from_str(rqstr: &str) -> Result<Self, Err> {
         let mut req = Request::new();
         req.parse(rqstr);

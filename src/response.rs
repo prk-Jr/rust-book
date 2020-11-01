@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+#![allow(unused_imports)]
 use serde::Serialize;
 use serde_json;
 use std::collections::BTreeMap;

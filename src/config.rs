@@ -3,7 +3,6 @@
 
 use rust_project::response::*;
 use rust_project::route::*;
-use rust_project::threadpool::*;
 use rust_project::{request::*, route};
 use std::collections::HashSet;
 use std::net::{SocketAddr, TcpListener, TcpStream};
@@ -16,6 +15,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
 
+use rayon::ThreadPoolBuilder;
 type Callback = fn(&mut TcpStream);
 
 pub struct Server {
@@ -44,22 +44,27 @@ impl Server {
             }
         );
 
-        let _pool = ThreadPool::new(self.workers);
+        let pool = ThreadPoolBuilder::new()
+            .num_threads(self.workers)
+            .build()
+            .unwrap();
 
         for stream in listener.incoming() {
-            let mut stream = stream.unwrap();
+            pool.install(|| {
+                let mut stream = stream.unwrap();
 
-            let mut buffer = [0; 1024];
+                let mut buffer = [0; 1024];
 
-            stream.read(&mut buffer).unwrap();
-            let req = String::from_utf8_lossy(&mut buffer).to_string();
+                stream.read(&mut buffer).unwrap();
+                let req = String::from_utf8_lossy(&mut buffer).to_string();
 
-            stream
-                .write(&self.handle_request(&req).send())
-                .expect("Error occured while repondinf to stream");
-            stream
-                .flush()
-                .expect("Error occured while reponding to stream");
+                stream
+                    .write(&self.handle_request(&req).send())
+                    .expect("Error occured while repondinf to stream");
+                stream
+                    .flush()
+                    .expect("Error occured while reponding to stream");
+            });
         }
     }
 
@@ -91,39 +96,3 @@ impl Server {
 }
 
 type Job = Box<dyn Fn(&mut TcpStream) + Send + Sync + 'static>;
-
-/* pub struct Route {
-    pub method: Method,
-    pub endpoint: String,
-    pub callback: Callback,
-    pub middleware: Option<Callback>,
-}
-
-#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
-pub enum Method {
-    GET,
-    POST,
-    PUT,
-    DELETE,
-}
-
-impl Route {
-    pub fn new(
-        method: Method,
-        endpoint: String,
-        callback: Callback,
-        middleware: Option<Callback>,
-    ) -> Self {
-        Self {
-            method,
-            endpoint,
-            callback,
-            middleware,
-        }
-    }
-
-    pub fn execute_callback(&self, stream: &mut TcpStream) {
-        (self.callback)(stream)
-    }
-}
- */
