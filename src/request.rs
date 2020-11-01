@@ -109,12 +109,11 @@ impl Request {
         }
     }
 
-    pub fn get<T: FromUri>(&self, name: &str) -> T {
-        if self.params.contains_key(name) == false {
-            panic!("Key: {} is absent", name);
+    pub fn get<T: FromUri>(&self, name: &str) -> Option<T> {
+        match self.params.contains_key(name) {
+            false => None::<T>,
+            true => Some(FromUri::from_uri(&self.params[name])),
         }
-
-        FromUri::from_uri(&self.params[name])
     }
 
     pub fn get_json(&self) -> Result<serde_json::Value, RequestError> {
@@ -147,25 +146,26 @@ impl Request {
         };
 
         self.path = String::from(ask[1]);
+        if ask.len() == 2 {
+            loop {
+                buf = buf[1].splitn(2, "\r\n").collect();
 
-        loop {
-            buf = buf[1].splitn(2, "\r\n").collect();
+                if buf[0] == "" {
+                    if buf.len() == 1 || buf[1] == "" {
+                        // no payload
+                        break;
+                    }
 
-            if buf[0] == "" {
-                if buf.len() == 1 || buf[1] == "" {
-                    // no payload
+                    self.payload.extend(buf[1].as_bytes());
                     break;
                 }
 
-                self.payload.extend(buf[1].as_bytes());
-                break;
-            }
+                let hdr: Vec<&str> = buf[0].splitn(2, ": ").collect();
 
-            let hdr: Vec<&str> = buf[0].splitn(2, ": ").collect();
-
-            if hdr.len() == 2 {
-                self.headers
-                    .insert(String::from(hdr[0]), String::from(hdr[1]));
+                if hdr.len() == 2 {
+                    self.headers
+                        .insert(String::from(hdr[0]), String::from(hdr[1]));
+                }
             }
         }
     }

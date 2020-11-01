@@ -17,23 +17,24 @@ use serde::{Deserialize, Serialize};
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
+
 fn main() {
     let _count = 0;
     let routes = vec![
-        Route::new(Method::Get, "/hello/<int:age>", my_res),
-        Route::new(Method::Post, "/hello/<int:age>", my_res_post),
+        Route::new(Method::Get, "/", my_res),
+        Route::new(Method::Post, "/<String:name>/<int:age>", my_res_post),
     ];
     // let _pool = ThreadPool::new(50);
 
-    let mut server = Server::new(String::from("127.0.0.1:7878"), routes, 10);
+    let mut server = Server::new(String::from("192.168.1.22:8000"), routes, 10);
     server.run();
 
     println!("Shutting down.");
 }
 
 fn my_res(req: &Request) -> Response {
-    let age: i32 = req.get::<i32>("age");
-    println!("age: {}, json: {:?}", age, req.get_json());
+    let age = req.get::<i32>("age");
+    println!("age: {:?}, json: {:?}", age, req.get_json());
     let mut response = Response::new();
 
     let mut res: Vec<String> = Vec::new();
@@ -55,7 +56,7 @@ struct Name {
 }
 
 fn my_res_post(req: &Request) -> Response {
-    let age: i32 = req.get::<i32>("age");
+    let _age = req.get::<i32>("age");
 
     // println!("age: {}, json :{:?} ", age, req.get_header("token"));
     let mut response = Response::new();
